@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import SoftOrbs from "@/components/interview/soft-orbs";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { useFormStore } from "@/lib/store/formStore";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getSkills } from "@/lib/api";
 
 const DOMAINS = [
   "Software",
@@ -25,25 +26,36 @@ export default function StartInterviewPage() {
   const [skills, setSkills] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const [recommendedSkills, setRecommendedSkills] = useState<string[]>([
-    "react",
-    "nodejs",
-    "typescript",
-    "docker",
-    "aws",
-  ]);
+  const [recommendedSkills, setRecommendedSkills] = useState<string[]>([]);
   const [recommendedSkillsLoading, setRecommendedSkillsLoading] =
     useState(false);
 
   const { formData, setFormData, startInterview, resetForm } = useFormStore();
 
-  const handleStart = () => {
-    if (!formData.jobRole || !formData.domain || formData.skills.length < 2) {
-      return;
+  const fetchSkills = async () => {
+    setRecommendedSkillsLoading(true);
+    try {
+      const res = await getSkills({
+        domain: formData.domain,
+        jobRole: formData.jobRole,
+      });
+
+      console.log("res ===>>>", res);
+      if (res.success) {
+        setRecommendedSkills(res.skills);
+      }
+      setRecommendedSkillsLoading(false);
+    } catch (error) {
+      console.log("error fetching skills: ", error);
+      setRecommendedSkillsLoading(false);
     }
-    startInterview();
-    router.push("/interview");
   };
+
+  useEffect(() => {
+    if (!formData.domain || !formData.jobRole) return;
+
+    fetchSkills();
+  }, [formData.domain, formData.jobRole]);
 
   const handleAddSkill = (newSkill: string) => {
     const trimmed = newSkill.trim();
@@ -81,6 +93,15 @@ export default function StartInterviewPage() {
       handleAddSkill(skill);
       setRecommendedSkills(recommendedSkills.filter((s) => s !== skill));
     }
+  };
+
+  const handleStart = () => {
+    setLoading(true);
+    if (!formData.jobRole || !formData.domain || formData.skills.length < 2) {
+      return;
+    }
+    startInterview();
+    router.push("/interview");
   };
 
   return (
@@ -230,12 +251,12 @@ export default function StartInterviewPage() {
             <div className="flex flex-col gap-2">
               <Button
                 type="submit"
-                // disabled={
-                //   loading ||
-                //   !formData.jobRole.trim() ||
-                //   !formData.domain.trim() ||
-                //   !formData.skills.length
-                // }
+                disabled={
+                  loading ||
+                  !formData.jobRole.trim() ||
+                  !formData.domain.trim() ||
+                  !formData.skills.length
+                }
                 className="cursor-pointer w-full border-0 bg-[var(--color-primary)] text-background hover:bg-[var(--color-primary)]/90"
               >
                 {loading ? (
