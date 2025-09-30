@@ -2,12 +2,17 @@
 
 import { useRouter } from "next/navigation";
 import { Button } from "./ui/button";
+import { useFormStore } from "@/lib/store/formStore";
 
 export function TopBar() {
   const router = useRouter();
+  const { formData, interviewStarted, resetForm, endInterview } =
+    useFormStore();
 
   function handleEndInterview() {
     // sessionStorage.setItem("interviewAnswers", JSON.stringify(answers));
+    endInterview();
+    resetForm();
     router.push("/");
   }
 
@@ -19,12 +24,14 @@ export function TopBar() {
             <div className="text-lg text-muted-foreground">
               AI Interviewer Coach
             </div>
-            <div className="text-xl truncate text-pretty font-medium">
-              Mock Interview - Software Engineer
-            </div>
+            {interviewStarted && formData && (
+              <div className="text-xl truncate text-pretty font-medium">
+                {formData.jobRole} - {formData.domain}
+              </div>
+            )}
           </div>
         </div>
-        {false && (
+        {interviewStarted && (
           <Button
             variant="ghost"
             size="sm"

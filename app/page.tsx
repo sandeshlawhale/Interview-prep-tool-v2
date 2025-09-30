@@ -22,8 +22,6 @@ const DOMAINS = [
 
 export default function StartInterviewPage() {
   const router = useRouter();
-  const [jobRole, setJobRole] = useState("");
-  const [domain, setDomain] = useState("");
   const [skills, setSkills] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -40,7 +38,9 @@ export default function StartInterviewPage() {
   const { formData, setFormData, startInterview, resetForm } = useFormStore();
 
   const handleStart = () => {
-    if (!formData.jobRole || !formData.domain || !formData.skills) return; // validate
+    if (!formData.jobRole || !formData.domain || formData.skills.length < 2) {
+      return;
+    }
     startInterview();
     router.push("/interview");
   };
@@ -98,7 +98,6 @@ export default function StartInterviewPage() {
             }}
             className="space-y-5"
           >
-            {/* Job Role */}
             <div>
               <Label
                 htmlFor="jobRole"
@@ -113,11 +112,10 @@ export default function StartInterviewPage() {
                 value={formData.jobRole}
                 onChange={(e) => setFormData({ jobRole: e.target.value })}
                 required
-                className="w-full "
+                className="w-full"
               />
             </div>
 
-            {/* Domain */}
             <div>
               <Label
                 htmlFor="domain"
@@ -134,7 +132,7 @@ export default function StartInterviewPage() {
                   "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                   "disabled:cursor-not-allowed disabled:opacity-50 text-foreground",
-                  !domain && "text-muted-foreground"
+                  !formData.domain && "text-muted-foreground"
                 )}
               >
                 <option value="" disabled>
@@ -148,7 +146,6 @@ export default function StartInterviewPage() {
               </select>
             </div>
 
-            {/* Skills */}
             <div className="w-full relative">
               <Label
                 htmlFor="skills"
@@ -163,7 +160,7 @@ export default function StartInterviewPage() {
                 onChange={(e) => setSkills(e.target.value)}
                 minLength={2}
                 onKeyDown={handleKeyDown}
-                className="px-3 py-2 text-sm sm:text-base bg-background"
+                className="px-3 py-2 text-sm sm:text-base "
                 disabled={formData.skills.length >= 5}
               />
               {skills.trim() && (
@@ -233,12 +230,12 @@ export default function StartInterviewPage() {
             <div className="flex flex-col gap-2">
               <Button
                 type="submit"
-                disabled={
-                  loading ||
-                  !formData.jobRole.trim() ||
-                  !formData.domain.trim() ||
-                  !formData.skills.length
-                }
+                // disabled={
+                //   loading ||
+                //   !formData.jobRole.trim() ||
+                //   !formData.domain.trim() ||
+                //   !formData.skills.length
+                // }
                 className="cursor-pointer w-full border-0 bg-[var(--color-primary)] text-background hover:bg-[var(--color-primary)]/90"
               >
                 {loading ? (
