@@ -34,6 +34,32 @@ export const useInterviewStore = create<InterviewStoreState>()(
     (set, get) => ({
       ...initialState,
 
+      addQuestion: (content) =>
+        set((state) => ({
+          conversation: [
+            ...state.conversation,
+            {
+              question: [{ content, role: "ai" }],
+              answer: [],
+              feedback: [],
+            },
+          ],
+        })),
+
+      addAnswer: (qIndex, content) =>
+        set((state) => {
+          const updated = [...state.conversation];
+          updated[qIndex].answer.push({ content, role: "user" });
+          return { conversation: updated };
+        }),
+
+      addFeedback: (qIndex, content) =>
+        set((state) => {
+          const updated = [...state.conversation];
+          updated[qIndex].feedback.push({ content, role: "ai" });
+          return { conversation: updated };
+        }),
+
       addMessage: (message) =>
         set((state) => ({
           conversation: [...state.conversation, message],

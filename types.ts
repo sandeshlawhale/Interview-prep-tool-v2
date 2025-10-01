@@ -41,8 +41,14 @@ export interface OverallFeedback {
   level: string;
 }
 
+type QAGroup = {
+  question: { content: string; role: "ai" }[];
+  answer: { content: string; role: "user" }[];
+  feedback: { content: string; role: "ai" }[];
+};
+
 export interface InterviewStoreState {
-  conversation: ConversationEntry[];
+  conversation: QAGroup[];
   overallFeedback: OverallFeedback;
   interviewComplete: boolean;
   interviewStarted: boolean;
@@ -55,6 +61,10 @@ export interface InterviewStoreState {
   ttsAbortController: AbortController | null;
   setTTSAbortController: (controller: AbortController | null) => void;
   abortTTS: () => void;
+
+  addQuestion: (content: string) => void;
+  addAnswer: (qIndex: number, content: string) => void;
+  addFeedback: (qIndex: number, content: string) => void;
 
   addMessage: (message: ConversationEntry) => void;
   resetConversation: () => void;

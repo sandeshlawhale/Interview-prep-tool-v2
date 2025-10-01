@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import useSWR from "swr";
 import { TopBar } from "./TopBar";
 import { ClientBreadcrumb } from "./ClientBreadcrumb";
@@ -10,6 +10,12 @@ import { VoiceProvider, useVoice } from "@/components/interview/voice-provider";
 import FeedbackCard from "@/components/interview/feedback-card";
 import FinalSummary from "@/components/interview/final-summary";
 import { Card } from "@/components/ui/card";
+import { useInterviewStore } from "@/lib/store/interviewStore";
+import { getNextQuestionAPI, submitAnswerAPI } from "@/lib/api";
+import { set } from "date-fns";
+import { useRouter } from "next/navigation";
+import { Skeleton } from "./ui/skeleton";
+import { ChevronRight } from "lucide-react";
 
 type Question = { id: string; text: string };
 type Feedback = {
@@ -22,140 +28,185 @@ type QA = { question: Question; answer: string; feedback?: Feedback };
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 export function InterviewClient() {
+  const router = useRouter();
+
+  const conversation = useInterviewStore((state) => state.conversation);
+  const questionCount = useInterviewStore((state) => state.questionCount);
+  const {
+    addMessage: setConversation,
+    incrementQuestionCount,
+    addAnswer,
+    maxQuestions,
+    addFeedback,
+    addQuestion,
+  } = useInterviewStore();
+
+  console.log("conversation===>>>", conversation, questionCount);
+
+  const [answerDraft, setAnswerDraft] = useState("");
+  const [showFeedback, setShowFeedback] = useState(false);
   const [round, setRound] = useState(1);
   const { data, isLoading } = useSWR<{ questions: Question[]; total: number }>(
     `/api/questions?round=${round}`,
     fetcher
   );
 
-  const [index, setIndex] = useState(0);
-  const [qas, setQAs] = useState<QA[]>([]);
-  const [answerDraft, setAnswerDraft] = useState("");
-  const [showSummary, setShowSummary] = useState(false);
+  // const [index, setIndex] = useState(0);
   const [recording, setRecording] = useState(false);
-  const { enabled, speak, stop } = useVoice();
 
-  const questions = data?.questions ?? [];
-  const total = data?.total ?? 0;
-  const current = qas[index];
+  const current = conversation[questionCount - 1];
 
-  // Initialize QAs
-  useEffect(() => {
-    if (!questions.length) return;
-    setQAs((prev) =>
-      prev.length === 0
-        ? questions.map((q) => ({ question: q, answer: "" }))
-        : prev.length < questions.length
-        ? [
-            ...prev,
-            ...questions
-              .slice(prev.length)
-              .map((q) => ({ question: q, answer: "" })),
-          ]
-        : prev
-    );
-  }, [questions]);
-
-  // Speak question when index changes
-  useEffect(() => {
-    if (!enabled || !current) return;
-    speak(current.question.text);
-    return () => stop();
-  }, [index, enabled, current, speak, stop]);
+  // useEffect(() => {
+  //   if (!enabled || !current) return;
+  //   speak(current.question.text);
+  //   return () => stop();
+  // }, [index, enabled, current, speak, stop]);
 
   // Load answer draft
-  useEffect(() => {
-    setAnswerDraft(current?.answer ?? "");
-  }, [index, current]);
+  // useEffect(() => {
+  //   setAnswerDraft(current?.answer ?? "");
+  // }, [index, current]);
 
   const answered = useMemo(
-    () => qas.map((qa) => Boolean(qa.answer || qa.feedback)),
-    [qas]
+    () => conversation.map((qa) => Boolean(qa.answer || qa.feedback)),
+    [conversation]
   );
 
   const submitAnswer = async () => {
-    if (!current) return;
-    const answer = answerDraft.trim();
-    const res = await fetch("/api/feedback", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question: current.question.text, answer }),
-    });
-    const feedback: Feedback = await res.json();
-    if (enabled)
-      speak(
-        `Feedback: ${feedback.strengths.join(
-          ", "
-        )}. Improvements: ${feedback.improvements.join(", ")}.`
-      );
-
-    setQAs((prev) => {
-      const copy = [...prev];
-      copy[index] = { ...copy[index], answer, feedback };
-      return copy;
-    });
+    if (answerDraft.trim() === "") return;
+    try {
+      addAnswer(questionCount - 1, answerDraft);
+      const sId = localStorage.getItem("sessionId") || "";
+      if (!sId) {
+        throw new Error("No session ID found");
+      }
+      const res = await submitAnswerAPI(sId, answerDraft);
+      //@ts-ignore
+      if (!res?.success) {
+        return;
+      }
+      addFeedback(questionCount - 1, res.feedback);
+      setShowFeedback(true);
+      setAnswerDraft("");
+    } catch (error) {
+      console.log("error in submitting answer: ", error);
+    }
   };
 
-  const skipQuestion = () => setIndex((prev) => Math.min(prev + 1, total - 1));
+  const callNextQuestion = async () => {
+    if (questionCount >= maxQuestions) {
+      router.replace("/result");
+      return;
+    }
 
-  if (isLoading || !questions.length)
-    return (
-      <main className="mx-auto max-w-6xl px-4 py-10">
-        <Card className="border border-border/50 bg-card/60 p-8 text-center backdrop-blur-xl">
-          Loading interview…
-        </Card>
-      </main>
-    );
+    try {
+      const sId = localStorage.getItem("sessionId") || "";
+      if (!sId) {
+        throw new Error("No session ID found");
+      }
 
-  if (!current)
+      const res = await getNextQuestionAPI(sId);
+      if (!res?.success) {
+        return;
+      }
+      addQuestion(res?.question);
+      incrementQuestionCount();
+      setShowFeedback(false);
+      setAnswerDraft("");
+    } catch (error) {
+      console.log("error in fetching next question: ", error);
+    }
+  };
+
+  const reviseQuestion = () => {
+    setAnswerDraft("");
+    setShowFeedback(false);
+  };
+
+  if (isLoading || !conversation?.length)
     return (
-      <main className="mx-auto max-w-6xl px-4 py-10">
-        <Card className="border border-border/50 bg-card/60 p-8 text-center backdrop-blur-xl">
-          Preparing question…
-        </Card>
-      </main>
+      <>
+        <main className="h-[90vh] flex flex-col ">
+          <div className="w-5xl mx-auto flex gap-2 mt-2 px-4">
+            {[1, 2, 3, 4, 5].map((i) => {
+              return (
+                <li key={i} className="flex items-center gap-2 z-10">
+                  <Skeleton className="h-8 w-10 rounded-md" />
+                  {i < [1, 2, 3, 4, 5].length && (
+                    <ChevronRight
+                      className="size-4 text-muted-foreground/70"
+                      aria-hidden
+                    />
+                  )}
+                </li>
+              );
+            })}
+          </div>
+
+          <main className="relative mx-auto max-w-5xl px-4 pb-16 pt-6 gap-4 flex-1 flex items-center justify-center flex-col w-full">
+            <div className="w-full flex flex-col gap-4">
+              <Skeleton className="h-8 w-full rounded-md" />
+              <Skeleton className="h-8 w-full rounded-md" />
+              <Skeleton className="h-8 w-1/3 rounded-md" />
+            </div>
+            <div className="w-full">
+              <Skeleton className="h-40 w-full rounded-md" />
+            </div>
+            <div className="w-full flex items-center justify-between">
+              <Skeleton className="h-8 w-20 rounded-md" />
+              <div className="flex gap-4">
+                <Skeleton className="h-8 w-20 rounded-md" />
+                <Skeleton className="h-8 w-20 rounded-md" />
+              </div>
+            </div>
+          </main>
+        </main>
+      </>
     );
 
   return (
     <main className="h-[90vh] flex flex-col">
-      <div className="w-6xl mx-auto">
+      <div className="w-5xl mx-auto">
         <ClientBreadcrumb
-          currentIndex={index}
-          total={total}
+          currentIndex={questionCount - 1}
+          total={maxQuestions}
           answered={answered}
         />
       </div>
 
-      <main className="relative mx-auto max-w-6xl px-4 pb-16 pt-6 gap-4 flex-1 flex items-center justify-center flex-col w-full">
-        {!showSummary ? (
-          <>
+      <main className="relative mx-auto max-w-5xl px-4 pb-16 pt-6 gap-4 flex-1 flex items-center justify-center flex-col w-full">
+        <>
+          {current ? (
             <QuestionPanel
-              question={current.question.text}
+              question={
+                conversation[questionCount - 1]?.question[0]?.content || ""
+              }
               speakerOn={false}
               onToggleSpeaker={() => {}}
             />
-            {current.feedback ? (
-              <FeedbackCard
-                feedback={current.feedback}
-                onRevise={() =>
-                  setAnswerDraft(current.feedback?.improvedAnswer || "")
-                }
-                onNext={() => setIndex(index + 1)}
-              />
-            ) : (
-              <AnswerArea
-                value={answerDraft}
-                onChange={setAnswerDraft}
-                onSubmit={submitAnswer}
-                onSkip={skipQuestion}
-                recording={recording}
-                onToggleRecord={() => setRecording((prev) => !prev)}
-              />
-            )}
-          </>
-        ) : (
-          <FinalSummary qas={qas} />
-        )}
+          ) : (
+            <div className="w-full flex flex-col gap-4">
+              <Skeleton className="h-8 w-full rounded-md" />
+              <Skeleton className="h-8 w-full rounded-md" />
+              <Skeleton className="h-8 w-1/3 rounded-md" />
+            </div>
+          )}
+          {showFeedback ? (
+            <FeedbackCard
+              feedback={current?.feedback?.at(-1)?.content}
+              onRevise={reviseQuestion}
+              onNext={callNextQuestion}
+            />
+          ) : (
+            <AnswerArea
+              value={answerDraft}
+              onChange={setAnswerDraft}
+              onSubmit={submitAnswer}
+              recording={recording}
+              onToggleRecord={() => setRecording((prev) => !prev)}
+            />
+          )}
+        </>
       </main>
     </main>
   );

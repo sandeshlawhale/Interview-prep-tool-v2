@@ -1,6 +1,7 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
+import { useInterviewStore } from "@/lib/store/interviewStore";
 import { cn } from "@/lib/utils";
 import { Volume2, VolumeX } from "lucide-react";
 
@@ -18,7 +19,7 @@ export function QuestionPanel({
   return (
     <Card className="w-full border-none bg-transparent py-0 backdrop-blur-xl shadow-none">
       <div className="flex items-center gap-2">
-        <h1 className="text-pretty text-xl font-semibold sm:text-2xl lg:text-3xl">
+        <h1 className="text-pretty tracking-wide  text-lg font-semibold sm:text-xl lg:text-2xl">
           {question}
         </h1>
         <div className="mt-1 shrink-0">

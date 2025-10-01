@@ -10,7 +10,8 @@ import { cn } from "@/lib/utils";
 import { useFormStore } from "@/lib/store/formStore";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getSkills } from "@/lib/api";
+import { getSkills, startInterviewAPI } from "@/lib/api";
+import { useInterviewStore } from "@/lib/store/interviewStore";
 
 const DOMAINS = [
   "Software",
@@ -31,6 +32,12 @@ export default function StartInterviewPage() {
     useState(false);
 
   const { formData, setFormData, startInterview, resetForm } = useFormStore();
+  const {
+    incrementQuestionCount,
+    addQuestion,
+    resetConversation,
+    resetQuestionCount,
+  } = useInterviewStore();
 
   const fetchSkills = async () => {
     setRecommendedSkillsLoading(true);
@@ -40,7 +47,6 @@ export default function StartInterviewPage() {
         jobRole: formData.jobRole,
       });
 
-      console.log("res ===>>>", res);
       if (res.success) {
         setRecommendedSkills(res.skills);
       }
@@ -101,7 +107,51 @@ export default function StartInterviewPage() {
       return;
     }
     startInterview();
+    resetConversation();
+    resetQuestionCount();
+    handleStartInterview({
+      jobRole: formData.jobRole,
+      domain: formData.domain,
+      skills: formData.skills,
+    });
     router.push("/interview");
+  };
+
+  const handleStartInterview = async (setupData: {
+    jobRole: string;
+    domain: string;
+    skills: string[];
+  }) => {
+    const { jobRole, domain, skills } = setupData;
+
+    if (!jobRole || !domain) {
+      alert("Please fill in all required fields.");
+      setLoading(false);
+      return;
+    }
+    if (skills.length <= 2) {
+      alert("minimun 3 Skills are required.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const data = await startInterviewAPI(setupData);
+
+      if (!data.success || !data.sessionId || !data.question) {
+        throw new Error("Failed to start interview. Please try again.");
+      }
+
+      localStorage.setItem("sessionId", data.sessionId);
+
+      addQuestion(data.question);
+      incrementQuestionCount();
+
+      router.replace(`/interview`);
+      // speakTextWithTTS(data.question);
+    } catch (error) {
+      console.error("Error starting interview:", error);
+    }
   };
 
   return (
@@ -226,13 +276,13 @@ export default function StartInterviewPage() {
                   </div>
                 </div>
               ) : (
-                recommendedSkills.length > 0 && (
+                recommendedSkills?.length > 0 && (
                   <div className="py-4">
                     <p className="cursor-pointer text-sm mb-1 sm:mb-0 sm:text-base font-medium ">
                       Recommended Skills by AI
                     </p>
                     <div className="flex flex-wrap gap-2 mt-2">
-                      {recommendedSkills.map((skill) => (
+                      {recommendedSkills?.map((skill) => (
                         <Badge
                           key={skill}
                           variant="outline"
@@ -255,7 +305,7 @@ export default function StartInterviewPage() {
                   loading ||
                   !formData.jobRole.trim() ||
                   !formData.domain.trim() ||
-                  !formData.skills.length
+                  !(formData.skills.length > 2)
                 }
                 className="cursor-pointer w-full border-0 bg-[var(--color-primary)] text-background hover:bg-[var(--color-primary)]/90"
               >

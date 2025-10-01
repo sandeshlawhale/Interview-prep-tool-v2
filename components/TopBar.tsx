@@ -14,11 +14,12 @@ export function TopBar() {
     endInterview();
     resetForm();
     router.push("/");
+    localStorage.removeItem("sessionId");
   }
 
   return (
     <header className="z-20 border-b border-border/50 bg-card/60">
-      <div className="mx-auto max-w-6xl px-4 flex items-center justify-between">
+      <div className="mx-auto max-w-5xl px-4 flex items-center justify-between">
         <div className="flex items-center justify-between py-3 backdrop-blur-xl">
           <div className="min-w-0">
             <div className="text-lg text-muted-foreground">

@@ -5,12 +5,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Mic, SkipForward, Send } from "lucide-react";
 import { Magnetic } from "./motion-primitives/magnetic";
+import { useInterviewStore } from "@/lib/store/interviewStore";
+import { InterviewClient } from "./InterviewClient";
+import { useRouter } from "next/navigation";
+import { getNextQuestionAPI } from "@/lib/api";
 
 interface AnswerAreaProps {
   value: string;
   onChange: (v: string) => void;
   onSubmit: () => void;
-  onSkip: () => void;
   recording: boolean;
   onToggleRecord: () => void;
 }
@@ -19,10 +22,38 @@ export function AnswerArea({
   value,
   onChange,
   onSubmit,
-  onSkip,
   recording,
   onToggleRecord,
 }: AnswerAreaProps) {
+  const router = useRouter();
+
+  const questionCount = useInterviewStore((state) => state.questionCount);
+  const { incrementQuestionCount, maxQuestions, addQuestion } =
+    useInterviewStore();
+
+  const handleSkipQuestion = async () => {
+    if (questionCount >= maxQuestions) {
+      router.replace("/result");
+      return;
+    }
+
+    try {
+      const sId = localStorage.getItem("sessionId") || "";
+      if (!sId) {
+        throw new Error("No session ID found");
+      }
+
+      const res = await getNextQuestionAPI(sId);
+      if (!res?.success) {
+        return;
+      }
+      addQuestion(res?.question);
+      incrementQuestionCount();
+    } catch (error) {
+      console.log("error in fetching next question by skipping: ", error);
+    }
+  };
+
   return (
     <Card className="w-full bg-transparent border-none p-0 backdrop-blur-xl shadow-none">
       <div className="flex flex-col gap-4">
@@ -36,7 +67,7 @@ export function AnswerArea({
           <Button
             variant="ghost"
             className="gap-0 cursor-pointer"
-            onClick={onSkip}
+            onClick={handleSkipQuestion}
           >
             <SkipForward className="mr-2 h-4 w-4" />
             Skip

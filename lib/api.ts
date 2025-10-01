@@ -17,7 +17,7 @@ export async function startInterviewAPI(
     skills,
   };
 
-  const response = await fetch(`${BASE_URL}/api/interviews`, {
+  const response = await fetch(`${BASE_URL}/v2/api/interviews`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -40,8 +40,10 @@ export async function submitAnswerAPI(
   feedback: string;
   nextQuestion?: string;
 }> {
+  console.log("sessionId===>>", sessionId);
+
   const response = await fetch(
-    `${BASE_URL}/api/interviews/${sessionId}/answers`,
+    `${BASE_URL}/v2/api/interviews/${sessionId}/answers`,
     {
       method: "POST",
       headers: {
@@ -60,10 +62,11 @@ export async function getNextQuestionAPI(
   sessionId: string
 ): Promise<{ question: string }> {
   const response = await fetch(
-    `${BASE_URL}/api/interviews/${sessionId}/questions`
+    `${BASE_URL}/v2/api/interviews/${sessionId}/questions`
   );
 
   if (!response.ok) throw new Error("Failed to get next answer");
+  console.log("response in api===>>>", response);
 
   return response.json();
 }
@@ -85,7 +88,7 @@ export async function submitFinalInterviewAPI(sessionId: string): Promise<{
   overallFeedback: OverallFeedback;
 }> {
   const response = await fetch(
-    `${BASE_URL}/api/interviews/${sessionId}/submit`,
+    `${BASE_URL}/v2/api/interviews/${sessionId}/submit`,
     {
       method: "POST",
       headers: {
