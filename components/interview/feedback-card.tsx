@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import ReactMarkdown from "react-markdown";
 import { useInterviewStore } from "@/lib/store/interviewStore";
+import { LoaderCircle } from "lucide-react";
 
 type Feedback = {
   strengths: string[];
@@ -15,10 +16,12 @@ export default function FeedbackCardComponent({
   feedback,
   onRevise,
   onNext,
+  nextQuestionLoading,
 }: {
   feedback: string | undefined;
   onRevise?: () => void;
   onNext?: () => void;
+  nextQuestionLoading: boolean;
 }) {
   const questionCount = useInterviewStore((state) => state.questionCount);
   const { maxQuestions } = useInterviewStore();
@@ -63,10 +66,17 @@ export default function FeedbackCardComponent({
               </Button>
             )}
             {onNext && (
-              <Button onClick={onNext} className="cursor-pointer">
-                {questionCount >= maxQuestions
-                  ? "Get Assessment"
-                  : "Next Question"}
+              <Button onClick={onNext} className="cursor-pointer gap-0">
+                {nextQuestionLoading ? (
+                  <>
+                    <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />{" "}
+                    Generating
+                  </>
+                ) : questionCount >= maxQuestions ? (
+                  "Get Assessment"
+                ) : (
+                  "Next Question"
+                )}
               </Button>
             )}
           </div>

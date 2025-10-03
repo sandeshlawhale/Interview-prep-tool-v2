@@ -3,17 +3,19 @@
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Mic, SkipForward, Send } from "lucide-react";
+import { Mic, SkipForward, Send, LoaderCircle } from "lucide-react";
 import { Magnetic } from "./motion-primitives/magnetic";
 import { useInterviewStore } from "@/lib/store/interviewStore";
 import { InterviewClient } from "./InterviewClient";
 import { useRouter } from "next/navigation";
 import { getNextQuestionAPI } from "@/lib/api";
+import { useState } from "react";
 
 interface AnswerAreaProps {
   value: string;
   onChange: (v: string) => void;
   onSubmit: () => void;
+  submitLoading: boolean;
   recording: boolean;
   onToggleRecord: () => void;
 }
@@ -22,6 +24,7 @@ export function AnswerArea({
   value,
   onChange,
   onSubmit,
+  submitLoading,
   recording,
   onToggleRecord,
 }: AnswerAreaProps) {
@@ -31,7 +34,10 @@ export function AnswerArea({
   const { incrementQuestionCount, maxQuestions, addQuestion } =
     useInterviewStore();
 
+  const [skipLoading, setSkipLoading] = useState(false);
+
   const handleSkipQuestion = async () => {
+    setSkipLoading(true);
     if (questionCount >= maxQuestions) {
       router.replace("/result");
       return;
@@ -49,8 +55,10 @@ export function AnswerArea({
       }
       addQuestion(res?.question);
       incrementQuestionCount();
+      setSkipLoading(false);
     } catch (error) {
       console.log("error in fetching next question by skipping: ", error);
+      setSkipLoading(false);
     }
   };
 
@@ -60,8 +68,9 @@ export function AnswerArea({
         <Textarea
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="min-h-32"
+          className="min-h-32 disabled:cursor-not-allowed"
           placeholder="Or type your answer here..."
+          disabled={submitLoading}
         />
         <div className="w-full flex items-center justify-between gap-2">
           <Button
@@ -69,8 +78,16 @@ export function AnswerArea({
             className="gap-0 cursor-pointer"
             onClick={handleSkipQuestion}
           >
-            <SkipForward className="mr-2 h-4 w-4" />
-            Skip
+            {skipLoading ? (
+              <>
+                <LoaderCircle className="h-4 w-4 animate-spin mr-2" /> Skipping
+              </>
+            ) : (
+              <>
+                <SkipForward className="mr-2 h-4 w-4" />
+                Skip
+              </>
+            )}
           </Button>
           <div className="flex gap-2 items-center">
             <div className="flex items-center gap-3">
@@ -93,10 +110,15 @@ export function AnswerArea({
               <Button
                 variant={"outline"}
                 onClick={onSubmit}
-                className="cursor-pointer"
+                className="cursor-pointer gap-0"
+                disabled={submitLoading}
               >
-                <Send className="mr-2 h-4 w-4" />
-                Submit
+                {submitLoading ? (
+                  <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="mr-2 h-4 w-4" />
+                )}
+                {submitLoading ? "Submitting" : "Submit"}
               </Button>
             </Magnetic>
           </div>

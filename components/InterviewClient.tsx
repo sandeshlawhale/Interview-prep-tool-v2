@@ -45,11 +45,8 @@ export function InterviewClient() {
 
   const [answerDraft, setAnswerDraft] = useState("");
   const [showFeedback, setShowFeedback] = useState(false);
-  const [round, setRound] = useState(1);
-  const { data, isLoading } = useSWR<{ questions: Question[]; total: number }>(
-    `/api/questions?round=${round}`,
-    fetcher
-  );
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [nextQuestionLoading, setNextQuestionLoading] = useState(false);
 
   // const [index, setIndex] = useState(0);
   const [recording, setRecording] = useState(false);
@@ -74,6 +71,7 @@ export function InterviewClient() {
 
   const submitAnswer = async () => {
     if (answerDraft.trim() === "") return;
+    setSubmitLoading(true);
     try {
       addAnswer(questionCount - 1, answerDraft);
       const sId = localStorage.getItem("sessionId") || "";
@@ -88,12 +86,15 @@ export function InterviewClient() {
       addFeedback(questionCount - 1, res.feedback);
       setShowFeedback(true);
       setAnswerDraft("");
+      setSubmitLoading(false);
     } catch (error) {
       console.log("error in submitting answer: ", error);
+      setSubmitLoading(false);
     }
   };
 
   const callNextQuestion = async () => {
+    setNextQuestionLoading(true);
     if (questionCount >= maxQuestions) {
       router.replace("/result");
       return;
@@ -113,8 +114,10 @@ export function InterviewClient() {
       incrementQuestionCount();
       setShowFeedback(false);
       setAnswerDraft("");
+      setNextQuestionLoading(false);
     } catch (error) {
       console.log("error in fetching next question: ", error);
+      setNextQuestionLoading(false);
     }
   };
 
@@ -123,7 +126,7 @@ export function InterviewClient() {
     setShowFeedback(false);
   };
 
-  if (isLoading || !conversation?.length)
+  if (!conversation?.length)
     return (
       <>
         <main className="h-[90vh] flex flex-col ">
@@ -196,12 +199,14 @@ export function InterviewClient() {
               feedback={current?.feedback?.at(-1)?.content}
               onRevise={reviseQuestion}
               onNext={callNextQuestion}
+              nextQuestionLoading={nextQuestionLoading}
             />
           ) : (
             <AnswerArea
               value={answerDraft}
               onChange={setAnswerDraft}
               onSubmit={submitAnswer}
+              submitLoading={submitLoading}
               recording={recording}
               onToggleRecord={() => setRecording((prev) => !prev)}
             />

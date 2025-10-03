@@ -12,6 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getSkills, startInterviewAPI } from "@/lib/api";
 import { useInterviewStore } from "@/lib/store/interviewStore";
+import { getDomains, getRolesByDomainId } from "@/lib/jobsApi";
+import { DomainProps } from "@/types";
 
 const DOMAINS = [
   "Software",
@@ -27,6 +29,9 @@ export default function StartInterviewPage() {
   const [skills, setSkills] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const [domains, setDomains] = useState<DomainProps[]>([]);
+  const [selectedDomainId, setSelectedDomainId] = useState<string | null>(null);
+  const [jobRoles, setJobRoles] = useState<string[]>([]);
   const [recommendedSkills, setRecommendedSkills] = useState<string[]>([]);
   const [recommendedSkillsLoading, setRecommendedSkillsLoading] =
     useState(false);
@@ -38,6 +43,40 @@ export default function StartInterviewPage() {
     resetConversation,
     resetQuestionCount,
   } = useInterviewStore();
+
+  useEffect(() => {
+    const getAllDomains = async () => {
+      const response = await getDomains();
+
+      if (!response.success) {
+        console.error(
+          "failed to fetch the domains, you can try again by refreshing"
+        );
+      }
+
+      setDomains(response.domains);
+      return;
+    };
+
+    getAllDomains();
+  }, []);
+
+  useEffect(() => {
+    const getJobRoleByDomain = async () => {
+      if (formData.domain && selectedDomainId) {
+        const response = await getRolesByDomainId(selectedDomainId);
+
+        if (!response.success) {
+          console.error("failed to load job roles, try again by refreshing");
+        }
+
+        setJobRoles(response?.jobRoles);
+        return;
+      }
+    };
+
+    getJobRoleByDomain();
+  }, [formData.domain, selectedDomainId]);
 
   const fetchSkills = async () => {
     setRecommendedSkillsLoading(true);
@@ -171,24 +210,6 @@ export default function StartInterviewPage() {
           >
             <div>
               <Label
-                htmlFor="jobRole"
-                className="mb-2 block text-sm font-medium"
-              >
-                Job Role
-              </Label>
-              <Input
-                id="jobRole"
-                type="text"
-                placeholder="e.g. Senior Software Engineer"
-                value={formData.jobRole}
-                onChange={(e) => setFormData({ jobRole: e.target.value })}
-                required
-                className="w-full"
-              />
-            </div>
-
-            <div>
-              <Label
                 htmlFor="domain"
                 className="mb-2 block text-sm font-medium"
               >
@@ -197,7 +218,13 @@ export default function StartInterviewPage() {
               <select
                 id="domain"
                 value={formData.domain}
-                onChange={(e) => setFormData({ domain: e.target.value })}
+                onChange={(e) => {
+                  const selected = domains.find(
+                    (d) => d.domain === e.target.value
+                  );
+                  setSelectedDomainId(selected ? selected.id : null);
+                  setFormData({ domain: e.target.value });
+                }}
                 required
                 className={cn(
                   "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background",
@@ -209,9 +236,41 @@ export default function StartInterviewPage() {
                 <option value="" disabled>
                   Select a domain
                 </option>
-                {DOMAINS.map((d) => (
-                  <option key={d} value={d}>
-                    {d}
+                {domains?.map((domain) => (
+                  <option value={domain.domain} key={domain.id}>
+                    {domain.domain}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <Label
+                htmlFor="jobRole"
+                className="mb-2 block text-sm font-medium"
+              >
+                Job Role
+              </Label>
+
+              <select
+                id="jobRole"
+                value={formData.jobRole}
+                onChange={(e) => setFormData({ jobRole: e.target.value })}
+                required
+                disabled={!formData.domain}
+                className={cn(
+                  "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                  "disabled:cursor-not-allowed disabled:opacity-50 text-foreground",
+                  !formData.jobRole && "text-muted-foreground"
+                )}
+              >
+                <option value="" disabled>
+                  Select a Job Role
+                </option>
+                {jobRoles?.map((role, i) => (
+                  <option value={role} key={`role_${i}`}>
+                    {role}
                   </option>
                 ))}
               </select>
