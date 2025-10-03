@@ -65,7 +65,6 @@ export default function FinalSummary() {
       }
 
       const res = await submitFinalInterviewAPI(sId);
-      console.log("res of final summary ===>>>", res);
       if (!res?.success) return;
 
       setOverallFeedback(res?.overallFeedback);

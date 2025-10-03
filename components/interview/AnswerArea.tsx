@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Mic, SkipForward, Send, LoaderCircle } from "lucide-react";
-import { Magnetic } from "./motion-primitives/magnetic";
+import { Magnetic } from "../motion-primitives/magnetic";
 import { useInterviewStore } from "@/lib/store/interviewStore";
 import { InterviewClient } from "./InterviewClient";
 import { useRouter } from "next/navigation";

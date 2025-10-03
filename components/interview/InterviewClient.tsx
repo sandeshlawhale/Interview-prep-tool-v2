@@ -14,7 +14,7 @@ import { useInterviewStore } from "@/lib/store/interviewStore";
 import { getNextQuestionAPI, submitAnswerAPI } from "@/lib/api";
 import { set } from "date-fns";
 import { useRouter } from "next/navigation";
-import { Skeleton } from "./ui/skeleton";
+import { Skeleton } from "../ui/skeleton";
 import { ChevronRight } from "lucide-react";
 
 type Question = { id: string; text: string };
@@ -40,8 +40,6 @@ export function InterviewClient() {
     addFeedback,
     addQuestion,
   } = useInterviewStore();
-
-  console.log("conversation===>>>", conversation, questionCount);
 
   const [answerDraft, setAnswerDraft] = useState("");
   const [showFeedback, setShowFeedback] = useState(false);

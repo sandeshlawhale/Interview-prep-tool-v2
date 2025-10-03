@@ -40,8 +40,6 @@ export async function submitAnswerAPI(
   feedback: string;
   nextQuestion?: string;
 }> {
-  console.log("sessionId===>>", sessionId);
-
   const response = await fetch(
     `${BASE_URL}/v2/api/interviews/${sessionId}/answers`,
     {
@@ -66,7 +64,6 @@ export async function getNextQuestionAPI(
   );
 
   if (!response.ok) throw new Error("Failed to get next answer");
-  console.log("response in api===>>>", response);
 
   return response.json();
 }
