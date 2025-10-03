@@ -92,8 +92,10 @@ export function AnswerArea({
           <div className="flex gap-2 items-center">
             <div className="flex items-center gap-3">
               <div className="text-xs text-muted-foreground">
-                (Primary: Voice input. We&apos;ll auto-fill the text above after
-                recording.)
+                {/* (Primary: Voice input. We&apos;ll auto-fill the text above after
+                recording.) */}
+                (There are some issues going with recording, we will fix this
+                ASAP.)
               </div>
               <Button
                 variant={recording ? "destructive" : "default"}
