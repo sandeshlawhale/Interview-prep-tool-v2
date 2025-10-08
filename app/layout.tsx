@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import "./globals.css";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
-import { TopBar } from "@/components/TopBar";
+import { TopBar } from "@/components/interview/TopBar";
 
 export const metadata = {
   title: "AI Interviewer Prep",

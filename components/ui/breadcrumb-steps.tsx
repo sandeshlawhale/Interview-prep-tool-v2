@@ -14,7 +14,7 @@ export function BreadcrumbSteps({
 }) {
   const items = Array.from({ length: total }, (_, i) => i);
   return (
-    <nav className="mx-auto max-w-7xl px-4 py-3" aria-label="Question progress">
+    <nav className="mx-auto max-w-5xl px-4 py-3" aria-label="Question progress">
       <ol className="flex items-center gap-2 text-sm">
         {items.map((i) => {
           const isCurrent = i === current;
