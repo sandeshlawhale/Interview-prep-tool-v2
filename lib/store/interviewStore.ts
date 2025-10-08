@@ -60,11 +60,6 @@ export const useInterviewStore = create<InterviewStoreState>()(
           return { conversation: updated };
         }),
 
-      addMessage: (message) =>
-        set((state) => ({
-          conversation: [...state.conversation, message],
-        })),
-
       resetConversation: () =>
         set(() => ({
           conversation: [],

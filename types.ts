@@ -66,7 +66,6 @@ export interface InterviewStoreState {
   addAnswer: (qIndex: number, content: string) => void;
   addFeedback: (qIndex: number, content: string) => void;
 
-  addMessage: (message: ConversationEntry) => void;
   resetConversation: () => void;
 
   setOverallFeedback: (feedback: OverallFeedback) => void;

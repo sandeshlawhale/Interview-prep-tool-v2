@@ -16,6 +16,7 @@ import { set } from "date-fns";
 import { useRouter } from "next/navigation";
 import { Skeleton } from "../ui/skeleton";
 import { ChevronRight } from "lucide-react";
+import { speakTextWithTTS } from "@/lib/audioApi";
 
 type Question = { id: string; text: string };
 type Feedback = {
@@ -33,7 +34,6 @@ export function InterviewClient() {
   const conversation = useInterviewStore((state) => state.conversation);
   const questionCount = useInterviewStore((state) => state.questionCount);
   const {
-    addMessage: setConversation,
     incrementQuestionCount,
     addAnswer,
     maxQuestions,
@@ -82,6 +82,7 @@ export function InterviewClient() {
         return;
       }
       addFeedback(questionCount - 1, res.feedback);
+      speakTextWithTTS(res?.feedback);
       setShowFeedback(true);
       setAnswerDraft("");
       setSubmitLoading(false);
@@ -109,6 +110,7 @@ export function InterviewClient() {
         return;
       }
       addQuestion(res?.question);
+      speakTextWithTTS(res?.question);
       incrementQuestionCount();
       setShowFeedback(false);
       setAnswerDraft("");

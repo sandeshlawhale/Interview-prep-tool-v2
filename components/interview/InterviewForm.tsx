@@ -14,6 +14,7 @@ import { getSkills, startInterviewAPI } from "@/lib/api";
 import { useInterviewStore } from "@/lib/store/interviewStore";
 import { getDomains, getRolesByDomainId } from "@/lib/jobsApi";
 import { DomainProps } from "@/types";
+import { speakTextWithTTS } from "@/lib/audioApi";
 
 const DOMAINS = [
   "Software",
@@ -187,7 +188,7 @@ export default function StartInterviewPage() {
       incrementQuestionCount();
 
       router.replace(`/interview`);
-      // speakTextWithTTS(data.question);
+      speakTextWithTTS(data.question);
     } catch (error) {
       console.error("Error starting interview:", error);
     }

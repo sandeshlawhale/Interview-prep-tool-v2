@@ -10,6 +10,7 @@ import { InterviewClient } from "./InterviewClient";
 import { useRouter } from "next/navigation";
 import { getNextQuestionAPI } from "@/lib/api";
 import { useState } from "react";
+import { speakTextWithTTS } from "@/lib/audioApi";
 
 interface AnswerAreaProps {
   value: string;
@@ -31,12 +32,13 @@ export function AnswerArea({
   const router = useRouter();
 
   const questionCount = useInterviewStore((state) => state.questionCount);
-  const { incrementQuestionCount, maxQuestions, addQuestion } =
+  const { incrementQuestionCount, maxQuestions, addQuestion, stopSpeaking } =
     useInterviewStore();
 
   const [skipLoading, setSkipLoading] = useState(false);
 
   const handleSkipQuestion = async () => {
+    stopSpeaking();
     setSkipLoading(true);
     if (questionCount >= maxQuestions) {
       router.replace("/result");
@@ -54,6 +56,7 @@ export function AnswerArea({
         return;
       }
       addQuestion(res?.question);
+      speakTextWithTTS(res?.question);
       incrementQuestionCount();
       setSkipLoading(false);
     } catch (error) {
