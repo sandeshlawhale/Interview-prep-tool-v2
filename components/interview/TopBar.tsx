@@ -3,11 +3,13 @@
 import { useRouter } from "next/navigation";
 import { Button } from "../ui/button";
 import { useFormStore } from "@/lib/store/formStore";
+import { useInterviewStore } from "@/lib/store/interviewStore";
 
 export function TopBar() {
   const router = useRouter();
   const { formData, interviewStarted, resetForm, endInterview } =
     useFormStore();
+  const { stopSpeaking } = useInterviewStore();
 
   function handleEndInterview() {
     // sessionStorage.setItem("interviewAnswers", JSON.stringify(answers));
@@ -36,7 +38,10 @@ export function TopBar() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={handleEndInterview}
+            onClick={() => {
+              stopSpeaking();
+              handleEndInterview();
+            }}
             className="cursor-pointer text-base text-foreground/80 hover:text-foreground"
           >
             End Interview

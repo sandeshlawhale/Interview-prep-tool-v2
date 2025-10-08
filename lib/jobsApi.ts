@@ -1,6 +1,6 @@
 import { DomainsProps, RolesProps } from "@/types";
 
-const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5051";
+const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 export async function getDomains(): Promise<DomainsProps> {
   const response = await fetch(`${BASE_URL}/api/domains`, {

@@ -4,7 +4,7 @@ import {
   OverallFeedback,
 } from "@/types";
 
-const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5051";
+const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 export async function startInterviewAPI(
   setupData: InterviewSetupData
